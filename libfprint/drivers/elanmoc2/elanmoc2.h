@@ -61,9 +61,11 @@
 // Currently only one device is supported, but I'd like to future-proof this driver for any new contributions.
 #define ELANMOC2_ALL_DEV 0
 #define ELANMOC2_DEV_0C4C (1 << 0)
+#define ELANMOC2_DEV_0C5E (2 << 0)
 
 // Subtract the 2-byte header
 #define ELANMOC2_USER_ID_MAX_LEN (cmd_finger_info.in_len - 2)
+#define ELANMOC2_USER_ID_MAX_LEN_0C5E (cmd_finger_info.in_len - 3)
 
 G_DECLARE_FINAL_TYPE (FpiDeviceElanMoC2, fpi_device_elanmoc2, FPI, DEVICE_ELANMOC2, FpDevice)
 
@@ -208,5 +210,6 @@ enum clear_storage_states {
 static const FpIdEntry elanmoc2_id_table[] = {
   {.vid = ELANMOC2_VEND_ID, .pid = 0x0c00, .driver_data = ELANMOC2_ALL_DEV},
   {.vid = ELANMOC2_VEND_ID, .pid = 0x0c4c, .driver_data = ELANMOC2_ALL_DEV},
+  {.vid = ELANMOC2_VEND_ID, .pid = 0x0c5e, .driver_data = ELANMOC2_DEV_0C5E},
   {.vid = 0, .pid = 0, .driver_data = ELANMOC2_DEV_0C4C}
 };

@@ -184,7 +184,11 @@ elanmoc2_print_new_with_user_id (FpiDeviceElanMoC2 *self, guchar finger_id, guch
 static void
 elanmoc2_get_user_id_string (FpiDeviceElanMoC2 *self, const guint8 *finger_info_response, guint8 *user_id, guint8 max_len)
 {
-  memcpy (user_id, &finger_info_response[2], max_len);
+  if (self->dev_type == ELANMOC2_DEV_0C5E)
+    memcpy (user_id, &finger_info_response[3], max_len);
+  else
+    memcpy (user_id, &finger_info_response[2], max_len);
+
   user_id[max_len] = '\0';
 }
 
@@ -192,17 +196,17 @@ static FpPrint *
 elanmoc2_print_new_from_finger_info (FpiDeviceElanMoC2 *self, guint8 finger_id, const guint8 *finger_info_response)
 {
   g_autofree guint8 *user_id = g_malloc (ELANMOC2_USER_ID_MAX_LEN + 1);
+  guint user_id_max_len = self->dev_type == ELANMOC2_DEV_0C5E ?
+                          ELANMOC2_USER_ID_MAX_LEN_0C5E :
+                          ELANMOC2_USER_ID_MAX_LEN;
 
-  elanmoc2_get_user_id_string (self, finger_info_response, user_id, ELANMOC2_USER_ID_MAX_LEN);
+  elanmoc2_get_user_id_string (self, finger_info_response, user_id, user_id_max_len);
 
-  memcpy (user_id, &finger_info_response[2], ELANMOC2_USER_ID_MAX_LEN);
-  user_id[ELANMOC2_USER_ID_MAX_LEN] = '\0';
-
-  guint8 user_id_len = ELANMOC2_USER_ID_MAX_LEN;
+  guint8 user_id_len = user_id_max_len;
 
   if (g_str_has_prefix ((const gchar *) user_id, "FP1-"))
     {
-      user_id_len = strnlen ((const char *) user_id, ELANMOC2_USER_ID_MAX_LEN);
+      user_id_len = strnlen ((const char *) user_id, user_id_max_len);
       fp_info ("Creating new print: finger %d, user id[%d]: %s", finger_id, user_id_len, user_id);
     }
   else
@@ -231,10 +235,13 @@ elanmoc2_finger_info_is_present (FpiDeviceElanMoC2 *self, const guint8 *finger_i
 {
   // Report true if the user ID was set by libfprint. This is not accurate since after wiping the sensor the user IDs
   // are not reset.
-  const gchar *user_id = (gchar *) &finger_info_response[2];
+  const gchar *user_id = self->dev_type == ELANMOC2_DEV_0C5E ?
+                         (gchar *) &finger_info_response[3] :
+                         (gchar *) &finger_info_response[2];
 
   return memcmp (user_id, "FP1-", 4) == 0;
 }
+
 
 static void
 elanmoc2_cancel (FpDevice *device)
